@@ -1,0 +1,63 @@
+
+
+    CMD_INVALID,
+    CMD_SHOWONCE,            //显示一条信息
+    CMD_SHOWALLDBG,          //显示当前所有信息
+    CMD_STEP,                //单步步入         t     
+    CMD_STEPGO,              //单步步过         p     
+    CMD_RUN,                 //运行             g     
+    CMD_TRACE,               //自动跟踪记录     trace
+    CMD_DISPLAY_ASMCODE,     //反汇编           u
+    CMD_DISPLAY_DATA,        //显示内存数据     d 
+    CMD_REGISTER,            //寄存器           r
+    CMD_EDIT_DATA,           //修改内存数据     e
+    CMD_BREAK_POINT,         //一般断点         bp
+    CMD_BP_LIST,             //一般断点列表     bpl
+    CMD_CLEAR_NORMAL,        //删除一般断点     bpc
+    CMD_BP_HARD,             //硬件断点         bh
+    CMD_BP_HARD_LIST,        //硬件断点列表     bhl
+    CMD_CLEAR_BP_HARD,       //删除硬件断点     bhc
+    CMD_BP_MEMORY,           //内存断点         bm
+    CMD_BP_MEMORY_LIST,      //内存断点列表     bml
+    CMD_BP_PAGE_LIST,        //分页断点列表     bmpl
+    CMD_CLEAR_BP_MEMORY,     //删除内存断点     bmc
+    CMD_LOAD_SCRIPT,         //导入脚本         ls
+    CMD_EXPORT_SCRIPT,       //导出脚本         es
+    CMD_QUIT,                //退出程序         q
+    CMD_MODULE_LIST          //查看模块         ML
+
+　	　
+硬件 访问 断在前
+硬件 读写 断在后
+　	　
+　	　
+
+单指令：
+单步步入	t
+单步步过	p
+运行	g
+寄存器	r
+一般断点列表	bpl
+硬件断点列表	bhl
+内存断点列表	bml
+分页断点列表	bmpl
+导入脚本	ls
+导出脚本	es
+退出程序　	q　
+查看模块	Ml
+修改内存数据	e
+显示内存数据	d
+反汇编	u
+
+
+多指令：
+自动跟踪记录　	trace　
+反汇编	u
+显示内存数据	d
+修改内存数据	e
+一般断点	bp
+删除一般断点	bpc
+硬件断点	bh
+删除硬件断点	bhc
+内存断点	bm
+删除内存断点	bmc

@@ -1,0 +1,3 @@
+EXPORTS
+    Decode2Asm          @1
+    Decode2AsmOpcode    @2

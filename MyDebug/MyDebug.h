@@ -1,0 +1,14 @@
+
+#if !defined(AFX_MYDEBUG_H__00E6716C_EDD6_4593_B1FE_CE780E2517D6__INCLUDED_)
+#define AFX_MYDEBUG_H__00E6716C_EDD6_4593_B1FE_CE780E2517D6__INCLUDED_
+
+#if _MSC_VER > 1000
+#pragma once
+#endif // _MSC_VER > 1000
+
+#include <IOSTREAM>
+
+#include "resource.h"
+#include "DeBug.h"
+
+#endif // !defined(AFX_MYDEBUG_H__00E6716C_EDD6_4593_B1FE_CE780E2517D6__INCLUDED_)

@@ -1,4 +1,4 @@
-# Windows image file caches
+﻿# Windows image file caches
 Thumbs.db
 ehthumbs.db
 
@@ -16,6 +16,26 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+#VC6
+*.exe
+*.obj
+*.sbr
+*.bsc
+*.ilk
+*.pch
+*.pdb
+*.idb
+*.dll
+*.tlh
+*.tli
+*.res
+*.ncb
+*.plg
+*.opt
+*.bat
+
+
 
 # =========================
 # Operating System Files
@@ -45,3 +65,6 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+
+*.APS
