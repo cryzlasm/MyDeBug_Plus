@@ -13,6 +13,7 @@
 #include "TagDeal.h"
 #include "ResolveCMD.h"
 #include "Decode2Asm.h"
+#include "PE.h"
 
 #include <afxtempl.h>
 #include <COMDEF.H>
@@ -20,9 +21,9 @@
 #pragma comment(lib, "Decode2Asm.lib")
 
 //=========================================================================
-#define CONTEXT_ALL             (CONTEXT_CONTROL | CONTEXT_INTEGER | \
-                                CONTEXT_SEGMENTS | CONTEXT_FLOATING_POINT | \
-                                CONTEXT_DEBUG_REGISTERS)
+// #define CONTEXT_ALL             (CONTEXT_CONTROL | CONTEXT_INTEGER | \
+//                                 CONTEXT_SEGMENTS | CONTEXT_FLOATING_POINT | \
+//                                 CONTEXT_DEBUG_REGISTERS)
 
 typedef HANDLE (__stdcall *PFN_OpenThread)(
                                            DWORD dwDesiredAccess,  // access right
@@ -116,13 +117,19 @@ public:
 
     static void __stdcall OutErrMsg(_IN_ LPCTSTR strErrMsg);    //输出错误信息
 
+    CPE m_PE; //PE相关
+
 private:
+    LPVOID m_lpInstance; //目标的映像基址
+
     BOOL SetHardBreakPoint(LPVOID lpAddr, BPSTATE dwState, DWORD dwLen = 0);  //设置硬件断点
 
     CResolveCMD m_CMD;          //解析CMD
 
     DWORD m_dwErrCount;           //错误计数, 十次错误
     
+    HANDLE m_hFile; //目标文件句柄
+
     DEBUG_EVENT m_DbgEvt;   //目标进程调试事件
     CONTEXT m_DstContext;   //目标进程上下文
     HANDLE m_hDstProcess;   //目标进程当前进程句柄

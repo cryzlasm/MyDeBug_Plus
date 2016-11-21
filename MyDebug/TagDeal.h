@@ -72,7 +72,9 @@ typedef enum _enumCmd
     CMD_EXPORT_SCRIPT,       //导出脚本         es
     CMD_QUIT,                //退出程序         q
     CMD_MODULE_LIST,         //查看模块         ML
-    CMD_MEM_INFO_LIST        //内存信息列表     mil
+    CMD_MEM_INFO_LIST,       //内存信息列表     mil
+    CMD_DUMP,                //内存Dump         dump
+    CMD_FIX_IAT              //修复IAT          fixiat
 }CMDSTATE, *PCMDSTATE;
 
 

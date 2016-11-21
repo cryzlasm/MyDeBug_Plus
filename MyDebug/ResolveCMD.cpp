@@ -182,6 +182,16 @@ BOOL CResolveCMD::Resolve(CMD_INFO& CmdInfo)
         {
             CmdInfo.dwState = CMD_MEM_INFO_LIST;
         }
+        //遍历内存页
+        else if(CmdInfo.strCMD == TEXT("dump"))
+        {
+            CmdInfo.dwState = CMD_DUMP;
+        }
+        //遍历内存页
+        else if(CmdInfo.strCMD == TEXT("fixiat"))
+        {
+            CmdInfo.dwState = CMD_FIX_IAT;
+        }
         else
         {
             //未知命令

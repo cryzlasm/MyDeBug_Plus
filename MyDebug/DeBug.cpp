@@ -21,6 +21,7 @@ void __stdcall CDeBug::OutErrMsg(LPCTSTR strErrMsg)
 }
 
 CDeBug::CDeBug()
+    :m_PE(&m_DbgEvt, &m_DstContext, &m_hDstProcess, &m_hDstThread)
 {
     memset(&m_DbgEvt, 0, sizeof(DEBUG_EVENT));
     memset(&m_DstContext, 0, sizeof(CONTEXT));
@@ -47,6 +48,8 @@ CDeBug::CDeBug()
     m_bIsMemStep = FALSE;
 
     m_lpTmpMemExec = NULL;
+
+    m_hFile = INVALID_HANDLE_VALUE;
 }
 
 CDeBug::~CDeBug()
@@ -139,7 +142,7 @@ BOOL CDeBug::Start(TCHAR* argv[])			//程序开始
             &pi);
         if(bRet == FALSE)
         {
-            tcout << TEXT("请输入正确的被调试程序名！") << endl;
+            tcout << TEXT("被调试程序可能不是可执行文件，或文件名错误.") << endl;
             return FALSE;
         }
     }
@@ -178,6 +181,7 @@ BOOL CDeBug::EventLoop()       //消息循环
             break;
         }
         
+        //打开进程，获得句柄
         m_hDstProcess = OpenProcess(PROCESS_ALL_ACCESS, 
             FALSE, 
             m_DbgEvt.dwProcessId);
@@ -188,6 +192,7 @@ BOOL CDeBug::EventLoop()       //消息循环
             continue;
         }
         
+        //打开线程，获得句柄
         m_hDstThread = m_pfnOpenThread(THREAD_ALL_ACCESS, 
             FALSE, 
             m_DbgEvt.dwThreadId);
@@ -198,7 +203,7 @@ BOOL CDeBug::EventLoop()       //消息循环
             continue;
         }
         
-        
+        //获得当前Context
         m_DstContext.ContextFlags = CONTEXT_ALL;
         GetThreadContext(m_hDstThread, &m_DstContext);
         
@@ -573,6 +578,7 @@ BOOL CDeBug::OnBreakPointEvent()       //一般断点
         //系统一次性断点，用于断在入口点
         if(bp->bpState == BP_SYS || bp->bpState == BP_ONCE)
         {
+            //m_PE.Dump(m_hFile, m_lpInstance);
             m_NorMalBpLst.RemoveAt(pos);
             delete bp;
         }
@@ -1150,6 +1156,11 @@ BOOL CDeBug::OnCreateProcessEvent()
     //添加断点节点
     m_NorMalBpLst.AddTail(ptagBp);
     
+    //获取目标实例句柄
+    m_lpInstance = m_DbgEvt.u.CreateProcessInfo.lpBaseOfImage;
+
+    m_hFile = m_DbgEvt.u.CreateProcessInfo.hFile;
+
     return TRUE;
 }
 
@@ -2383,6 +2394,9 @@ BOOL CDeBug::HandleCmd(CMD_INFO& CmdInfo, LPVOID lpAddr)          //执行命令
     case CMD_INVALID:
     default:
         break;
+
+    case CMD_DUMP:
+        m_PE.Dump(m_hFile, m_lpInstance);
     }
     
     CmdInfo.bIsBreakInputLoop = bIsBreak;

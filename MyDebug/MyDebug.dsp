@@ -97,6 +97,10 @@ SOURCE=.\MyDebug.rc
 # End Source File
 # Begin Source File
 
+SOURCE=.\PE.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\ResolveCMD.cpp
 # End Source File
 # Begin Source File
@@ -119,6 +123,10 @@ SOURCE=.\Decode2Asm.h
 # Begin Source File
 
 SOURCE=.\MyDebug.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\PE.h
 # End Source File
 # Begin Source File
 
