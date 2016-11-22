@@ -54,6 +54,7 @@ CDeBug::CDeBug()
 
 CDeBug::~CDeBug()
 {
+    //释放 m_ModuleLst
     POSITION pos = m_ModuleLst.GetHeadPosition();
     POSITION posTmp = NULL;
     while(pos)
@@ -67,6 +68,7 @@ CDeBug::~CDeBug()
         }
     }
     
+    //释放 m_NorMalBpLst
     pos = m_NorMalBpLst.GetHeadPosition();
     while(pos)
     {
@@ -78,7 +80,8 @@ CDeBug::~CDeBug()
             m_NorMalBpLst.RemoveAt(posTmp);
         }
     }
-
+    
+    //释放 m_HardBpLst
     pos = m_HardBpLst.GetHeadPosition();
     while(pos)
     {
@@ -90,7 +93,8 @@ CDeBug::~CDeBug()
             m_HardBpLst.RemoveAt(posTmp);
         }
     }pos = m_HardBpLst.GetHeadPosition();
-
+    
+    //释放 m_CmdOrderLst
     pos = m_CmdOrderLst.GetHeadPosition();
     while(pos)
     {
@@ -99,6 +103,30 @@ CDeBug::~CDeBug()
         if(pStr != NULL)
         {
             delete pStr;
+            m_CmdOrderLst.RemoveAt(posTmp);
+        }
+    }
+
+    //释放 m_ModLst
+    pos = m_ModLst.GetHeadPosition();
+    while(pos)
+    {
+        posTmp = pos;
+        PMOD_INFO pMod = m_ModLst.GetNext(pos);
+        if(pMod != NULL)
+        {
+            POSITION SubPos = pMod->FunLst.GetHeadPosition();
+            POSITION SubTmpPos = NULL;
+            while(SubPos)
+            {
+                SubTmpPos = SubPos;
+                PMOD_EXPORT_FUN pFun = pMod->FunLst.GetNext(pos);
+
+                delete pFun;
+                pMod->FunLst.RemoveAt(SubTmpPos);
+            }
+            
+            delete pMod;
             m_CmdOrderLst.RemoveAt(posTmp);
         }
     }
@@ -579,6 +607,13 @@ BOOL CDeBug::OnBreakPointEvent()       //一般断点
         if(bp->bpState == BP_SYS || bp->bpState == BP_ONCE)
         {
             //m_PE.Dump(m_hFile, m_lpInstance);
+            if(!m_PE.InitModLst(m_ModLst))
+            {
+                tcout << TEXT("严重系统错误，请联系管理员") << endl;
+                OutErrMsg(TEXT("OnBreakPointEvent: 初始化模块信息失败"));
+                system("pause");
+                ExitProcess(0);
+            }
             m_NorMalBpLst.RemoveAt(pos);
             delete bp;
         }
@@ -1018,7 +1053,7 @@ BOOL CDeBug::ShowRemoteReg()           //显示远程寄存器
 
 
 //反汇编指定地址一条数据
-BOOL CDeBug::GetOneAsm(LPVOID lpAddr, DWORD& dwOrderCount, CString& strOutAsm)
+BOOL CDeBug::GetOneAsm(LPVOID lpAddr, DWORD& dwOrderCount, CString& strOutOpCode, CString& strOutAsm)
 {
     UINT unCodeAddress = (DWORD)lpAddr;    //基址
     DWORD dwRead = 0;
@@ -1038,6 +1073,7 @@ BOOL CDeBug::GetOneAsm(LPVOID lpAddr, DWORD& dwOrderCount, CString& strOutAsm)
         return FALSE;
     }
 
+    //修补原指令
     POSITION pos = NULL;
     if(IsAddrInBpList(lpAddr, m_NorMalBpLst, pos))
     {
@@ -1047,61 +1083,200 @@ BOOL CDeBug::GetOneAsm(LPVOID lpAddr, DWORD& dwOrderCount, CString& strOutAsm)
     
     Decode2AsmOpcode(pCode, szAsmBuf, szOpcodeBuf,
         &unCodeSize, unCodeAddress);
-    
+
+    strOutOpCode = szOpcodeBuf;
     strOutAsm = szAsmBuf;
     dwOrderCount = unCodeSize;
+
+    strOutAsm.MakeLower();
+    if(strOutAsm.Find(TEXT("call")) != -1 || strOutAsm.Find(TEXT("jmp")) != -1 )
+    {
+        if(!ConvertCallAddr(strOutAsm))
+        {
+            OutErrMsg(TEXT("GetOneAsm: 转换地址失败"));
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+BOOL CDeBug::ConvertCallAddr(CString& strAsm)
+{
+    CString strOperator = TEXT("");
+    int nPos = strAsm.Find(TEXT("call"));
+    if(nPos == -1)
+    {
+        nPos = strAsm.Find(TEXT("jmp"));
+        strOperator = strAsm.Left(strlen(TEXT("jmp")));
+    }
+    else
+    {
+        strOperator = strAsm.Left(strlen(TEXT("call")));
+    }
+
+    // 是否需要间接寻址
+    BOOL bIsSecondHand = FALSE;
+
+    //拆分 操作数
+    CString strOpCode = TEXT("");
+    int nSubPosLeft = strAsm.Find(TEXT("["));
+    int nSubPosRight = strAsm.Find(TEXT("]"));
+    if(nSubPosLeft != -1 && nSubPosRight != -1)
+    {
+        bIsSecondHand = TRUE;
+        strOpCode = strAsm.Mid(nSubPosLeft + 1, nSubPosRight - nSubPosLeft - 1);
+    }
+    else
+    {
+        strOpCode = strAsm.Right(strAsm.GetLength() - nPos);
+    }
+    
+    //转换操作数
+    DWORD dwOpCode = 0;
+    PCHAR lpUnUse = NULL;
+    dwOpCode = (DWORD)_tcstol(strOpCode, &lpUnUse, CONVERT_HEX);
+
+    if(bIsSecondHand)
+    {
+        if(!ReadProcessMemory(m_hDstProcess, (LPVOID)dwOpCode, &dwOpCode, sizeof(dwOpCode), NULL))
+        {
+            OutErrMsg(TEXT("ConvertCallAddr：读取远程内存失败"));
+            return TRUE;
+        }
+    }
+
+    //是否找到
+    BOOL bIsFind = FALSE;
+    
+    //获取地址命中
+    CString strModName = TEXT("");
+    CString strFunName = TEXT("");
+
+    POSITION pos = m_ModLst.GetHeadPosition();
+    while(pos)
+    {
+        PMOD_INFO pModInfo = m_ModLst.GetNext(pos);
+
+        //判断地址命中在哪个模块
+        if(dwOpCode >= pModInfo->dwModBaseAddr &&
+           dwOpCode < (pModInfo->dwModBaseAddr + pModInfo->dwModSize))
+        {
+            //遍历模块函数表
+            POSITION subPos = pModInfo->FunLst.GetHeadPosition();
+            while(subPos)
+            {
+                PMOD_EXPORT_FUN pFun = pModInfo->FunLst.GetNext(subPos);
+
+                //判断地址命中在哪个函数
+                if(pFun->dwFunAddr == dwOpCode)
+                {
+                    bIsFind = TRUE;
+                    if(!pFun->bIsName)
+                    {
+                        strFunName.Format(TEXT("%04X"), pFun->dwOrdinal);
+                    }
+                    else
+                    {
+                        strFunName = pFun->strFunName;
+                    }
+
+                    break;
+                }// End If
+            }// End while(subPos)
+
+            if(bIsFind)
+            {
+                strModName = pModInfo->strModName;
+                strModName = strModName.Left(strModName.GetLength() - strlen(TEXT(".dll")));   // .dll
+                break;
+            }
+        }//End If
+    }//End while(pos)
+
+    //拼装操作
+    if(bIsFind)
+    {
+        if(bIsSecondHand)
+        {
+            strAsm.Format(TEXT("%s Dword Ptr DS:[<%s.%s>]"), (LPCTSTR)strOperator, (LPCTSTR)strModName, (LPCTSTR)strFunName);
+        }
+        else
+        {
+            strAsm.Format(TEXT("%s <%s.%s>"), (LPCTSTR)strOperator, (LPCTSTR)strModName, (LPCTSTR)strFunName);
+        }
+    }
+
     return TRUE;
 }
 
 #define OneAsmSize 10
 BOOL CDeBug::ShowRemoteDisAsm(LPVOID lpAddr, DWORD& dwOutCurAddr, DWORD dwAsmCount)        //显示远程反汇编
 {
-    DWORD dwRead = 0;
-    UCHAR szBuf[MAXBYTE] = {0};
-    
-    BOOL bRet = FALSE;
-    DWORD dwReadLen = 0;
-    //BYTE btCode[MAXBYTE] = {0};
-    char szAsmBuf[MAXBYTE] = {0};           //反汇编指令缓冲区
-    char szOpcodeBuf[MAXBYTE] = {0};        //机器码缓冲区
-    UINT unCodeSize = 0;
-    UINT unCount = 0;
-    UINT unCodeAddress = (DWORD)lpAddr;
-    PBYTE pCode = szBuf;
-    char szFmt[MAXBYTE *2] = {0};
-    
-    //获取远程信息
-    if(!ReadProcessMemory(m_hDstProcess, lpAddr, szBuf, RemoteOneReadSize, &dwRead))
+    //获取一条反汇编
+    CString strAsm = TEXT("");
+    CString strOpCode = TEXT("");
+    DWORD dwSize = 0;
+    LPVOID lpTmpAddr = lpAddr;
+
+
+    for(DWORD i = 0; i < dwAsmCount; i++)
     {
-        OutErrMsg(TEXT("ShowRemoteDisAsm：读取远程内存失败！"));
-        return FALSE;
+        if(!GetOneAsm(lpTmpAddr, dwSize, strOpCode, strAsm))
+        {
+            CDeBug::OutErrMsg(TEXT("ShowRemoteDisAsm: 反汇编失败!"));
+            continue;
+        }
+        _tprintf(TEXT("%p:%-20s%s\r\n"), lpTmpAddr, strOpCode, strAsm);
+        lpTmpAddr = (PCHAR) lpTmpAddr + dwSize;
     }
-    
-    //转换5条汇编码
-    DWORD dwRemaining = 0;
-    while(unCount < dwAsmCount)
-    {
-        Decode2AsmOpcode(pCode, szAsmBuf, szOpcodeBuf,
-            &unCodeSize, unCodeAddress);
-        
-        _tprintf(TEXT("%p:%-20s%s\r\n"), unCodeAddress, szOpcodeBuf, szAsmBuf);
-        
-        //         dwRemaining = 0x18 - _tcsclen(szOpcodeBuf);
-        // 
-        //         //补空格
-        //         while(dwRemaining--)
-        //         {
-        //             _puttchar(' ');
-        //         }
-        //         
-        //         puts(szAsmBuf);
-        
-        
-        pCode += unCodeSize;
-        unCount++;
-        unCodeAddress += unCodeSize;
-    }
-    dwOutCurAddr = unCodeAddress;
+
+//     DWORD dwRead = 0;
+//     UCHAR szBuf[MAXBYTE] = {0};
+//     
+//     BOOL bRet = FALSE;
+//     DWORD dwReadLen = 0;
+//     //BYTE btCode[MAXBYTE] = {0};
+//     char szAsmBuf[MAXBYTE] = {0};           //反汇编指令缓冲区
+//     char szOpcodeBuf[MAXBYTE] = {0};        //机器码缓冲区
+//     UINT unCodeSize = 0;
+//     UINT unCount = 0;
+//     UINT unCodeAddress = (DWORD)lpAddr;
+//     PBYTE pCode = szBuf;
+//     char szFmt[MAXBYTE *2] = {0};
+//     
+//     //获取远程信息
+//     if(!ReadProcessMemory(m_hDstProcess, lpAddr, szBuf, RemoteOneReadSize, &dwRead))
+//     {
+//         OutErrMsg(TEXT("ShowRemoteDisAsm：读取远程内存失败！"));
+//         return FALSE;
+//     }
+//     
+//     //转换5条汇编码
+//     DWORD dwRemaining = 0;
+//     while(unCount < dwAsmCount)
+//     {
+//         Decode2AsmOpcode(pCode, szAsmBuf, szOpcodeBuf,
+//             &unCodeSize, unCodeAddress);
+//         
+//         _tprintf(TEXT("%p:%-20s%s\r\n"), unCodeAddress, szOpcodeBuf, szAsmBuf);
+//         
+//         //         dwRemaining = 0x18 - _tcsclen(szOpcodeBuf);
+//         // 
+//         //         //补空格
+//         //         while(dwRemaining--)
+//         //         {
+//         //             _puttchar(' ');
+//         //         }
+//         //         
+//         //         puts(szAsmBuf);
+//         
+//         
+//         pCode += unCodeSize;
+//         unCount++;
+//         unCodeAddress += unCodeSize;
+//     }
+    //dwOutCurAddr = unCodeAddress;
+    dwOutCurAddr = (DWORD)lpTmpAddr;
     
     return TRUE;
 }
@@ -1925,10 +2100,15 @@ BOOL CDeBug::CmdSetOneStepOver(CMD_INFO& CmdInfo, LPVOID lpAddr)   //单步步过
 {
     DWORD dwCount = 0;
     CString strAsm = TEXT("");
+    CString strOpCode = TEXT("");
     
 
-    if(!GetOneAsm(lpAddr, dwCount, strAsm))
+    if(!GetOneAsm(lpAddr, dwCount, strOpCode, strAsm))
+    {
+        tcout << TEXT("系统断点: 严重BUG，请联系管理员！") << endl;
         m_dwErrCount++;
+        return FALSE;
+    }
     
     strAsm.MakeLower();
 

@@ -170,4 +170,119 @@ typedef struct _tag_DR6
     unsigned int RESERVED1:16;
 }MYDR6, *PMYDR6;
 
+//函数信息表
+typedef struct _tag_MODULE_EXPORT_FUN_INFO
+{
+    DWORD dwFunAddr;    //函数地址
+    BOOL bIsName;       //是否为名称
+    DWORD dwOrdinal;    //序号
+    CString strFunName; //名称
+}MOD_EXPORT_FUN, *PMOD_EXPORT_FUN;
+
+//模块列表
+typedef struct _tag_MODULE_INFO
+{
+    DWORD dwModBaseAddr;    // 模块基址
+    DWORD dwModSize;        // 模块大小 
+    DWORD dwlpEntryPoint;   // 模块入口
+    DWORD dwFunCount;       // 模块导出函数个数
+    CString strModName;     // 模块名称
+    CString strModPath;     // 模块路径
+    CList<PMOD_EXPORT_FUN, PMOD_EXPORT_FUN&> FunLst;    //函数列表
+}MOD_INFO, *PMOD_INFO;
+
+// typedef struct _tag_IAT_INFO
+// {
+//     DWORD dwIATAddr;    //IAT地址
+//     DWORD dwIATCount;   //导入函数个数
+//     BOOL  bIsName;      //是否为名称
+//     DWORD dwOrdinal;    //序号
+//     CString strDllName; //名称
+// 
+// }IAT_INFO, *PIAT_INFO;
+
+//InLoadOrderModuleList
+typedef struct _tag_MODULE_LDR_INFO
+{
+    LIST_ENTRY             pForwardLst;            //Offset:: 00,  下一个表
+    LIST_ENTRY             pBeforeLst;             //Offset:: 08,  上一个表
+    LIST_ENTRY             pUnKnowLst;             //Offset:: 10,  未知表
+    
+    LPVOID  lpMouduleBase;                          //Offset:: 18,  模块基址
+    
+    LPVOID  lpMouduleEntryPoint;                    //Offset:: 1C,  模块入口点
+    
+    DWORD   dwMouduleSize;                          //Offset:: 20,  模块大小
+    
+    DWORD   dwPathStrLen:  16;                      //Offset:: 24,  路径字符串的长度
+    DWORD   dwPathStrSize: 16;                      //Offset:: 24,  路径字符串实际占用空间大小
+    LPCWSTR bstrFilePath;                           //Offset:: 28,  路径字符串位置
+    
+    DWORD   dwNameStrLen:  16;                      //Offset:: 2C,  名称字符串的长度
+    DWORD   dwNameStrSize: 16;                      //Offset:: 2C,  名称字符串实际占用空间大小
+    LPCWSTR bstrFileName;                           //Offset:: 30,  名称字符串位置
+    
+}MODULE_LDR_INFO, *PMODULE_LDR_INFO;    //Offset:: 34, Size 0x34, 52
+
+//InLoadOrderModuleListEx
+// typedef struct _tag_MODULE_LDR_INFO_EX
+// {
+//     // +0x034 Flags            : Uint4B
+//     // +0x038 LoadCount        : Uint2B
+//     // +0x03a TlsIndex         : Uint2B
+//     // +0x03c HashLinks        : _LIST_ENTRY
+//     // +0x03c SectionPointer   : Ptr32 Void
+//     // +0x040 CheckSum         : Uint4B
+//     // +0x044 TimeDateStamp    : Uint4B
+//     // +0x044 LoadedImports    : Ptr32 Void
+//     
+//     LIST_ENTRY              pForwardLst;                    //Offset:: 00,  下一个表
+//     LIST_ENTRY              pBeforeLst;                     //Offset:: 08,  上一个表
+//     LIST_ENTRY              pUnKnowLst;                     //Offset:: 10,  未知表
+//     LPVOID                  lpDllBase;                      //Offset:: 18,  模块基址
+//     LPVOID                  lpEntryPoint;                   //Offset:: 1C,  模块入口点
+//     DWORD                   dwSizeOfImage;                  //Offset:: 20,  模块大小
+//     DWORD                   dwPathStrLen:  16;              //Offset:: 24,  路径字符串的长度
+//     DWORD                   dwPathStrSize: 16;              //Offset:: 24,  路径字符串实际占用空间大小
+//     BSTR                    bstrFilePath;                   //Offset:: 28,  路径字符串地址
+//     DWORD                   dwNameStrLen:  16;              //Offset:: 2C,  名称字符串的长度
+//     DWORD                   dwNameStrSize: 16;              //Offset:: 2C,  名称字符串实际占用空间大小
+//     BSTR                    bstrFileName;                   //Offset:: 30,  名称字符串地址
+//     DWORD                   dwFlags;                        //Offset:: 34,  
+//     DWORD                   dwLoadCount:   16;              //Offset:: 38,  引用计数？？
+//     DWORD                   dwTlsIndex:    16;              //Offset:: 38,  
+//     union
+//     {
+//         _LIST_ENTRY         lstHashLinks;                   //Offset:: 3C,
+//         struct  
+//         {
+//             DWORD               dwSectionPointer;           //Offset:: 3C,
+//             DWORD               dwCheckSum;                 //Offset:: 40,
+//         };
+//     }UnKnow1;
+//     
+//     union
+//     {
+//         DWORD               dwTimeDateStamp;                //Offset:: 44,
+//         DWORD               dwLoadedImports;                //Offset:: 44,
+//     }UnKnow2;
+//     
+//     // +0x048 EntryPointActivationContext : Ptr32 _ACTIVATION_CONTEXT
+//     // +0x04c PatchInformation : Ptr32 Void
+//     // +0x050 ForwarderLinks   : _LIST_ENTRY
+//     // +0x058 ServiceTagLinks  : _LIST_ENTRY
+//     // +0x060 StaticLinks      : _LIST_ENTRY
+//     // +0x068 ContextInformation : Ptr32 Void
+//     // +0x06c OriginalBase     : Uint4B
+//     // +0x070 LoadTime         : _LARGE_INTEGER
+//     LPVOID                  ptagEntryPointActivationContext;//Offset:: 48, _ACTIVATION_CONTEXT 类型的指针
+//     LPVOID                  lpPatchInformation;             //Offset:: 4C,
+//     _LIST_ENTRY             lstForwarderLinks;              //Offset:: 50
+//     _LIST_ENTRY             lstServiceTagLinks;             //Offset:: 58
+//     _LIST_ENTRY             lstStaticLinks;                 //Offset:: 60
+//     LPVOID                  lpContextInformation;           //Offset:: 68
+//     DWORD                   dwOriginalBase;                 //Offset:: 6C
+//     _LARGE_INTEGER          tagLoadTime;                    //Offset:: 70
+// }MODULE_LDR_INFO_EX, *PMODULE_LDR_INFO_EX;  //Offset:: 78  size 0x78, 120
+
 #endif

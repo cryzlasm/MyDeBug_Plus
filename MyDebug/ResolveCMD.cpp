@@ -62,16 +62,19 @@ BOOL CResolveCMD::Resolve(CMD_INFO& CmdInfo)
         else if(strOrder == TEXT("d"))
         {
             CmdInfo.dwState = CMD_DISPLAY_DATA;
+            CmdInfo.dwPreAddr = NULL;
         }
         //查看反汇编
         else if(strOrder == TEXT("u"))
         {
             CmdInfo.dwState = CMD_DISPLAY_ASMCODE;
+            CmdInfo.dwPreAddr = NULL;
         }
         //修改内存数据
         else if(strOrder == TEXT("e"))
         {
             CmdInfo.dwState = CMD_EDIT_DATA;
+            CmdInfo.dwPreAddr = NULL;
         }
         //跟踪
         else if(strOrder == TEXT("trace"))

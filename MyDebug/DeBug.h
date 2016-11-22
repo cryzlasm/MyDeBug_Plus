@@ -9,14 +9,15 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include <afxtempl.h>
+#include <COMDEF.H>
+
 #include "stdafx.h"
 #include "TagDeal.h"
 #include "ResolveCMD.h"
 #include "Decode2Asm.h"
 #include "PE.h"
 
-#include <afxtempl.h>
-#include <COMDEF.H>
 
 #pragma comment(lib, "Decode2Asm.lib")
 
@@ -89,7 +90,10 @@ public:
     BOOL ShowRemoteDisAsm(LPVOID lpAddr, DWORD& dwOutCurAddr, DWORD dwAsmCount = 10);      
 
     //反汇编指定地址一条数据
-    BOOL GetOneAsm(LPVOID lpAddr, DWORD& dwOrderCount, CString& strOutAsm);     
+    BOOL GetOneAsm(LPVOID lpAddr, DWORD& dwOrderCount, CString& strOutOpCode, CString& strOutAsm);     
+
+    //转换CALL 的地址
+    BOOL CDeBug::ConvertCallAddr(CString& strAsm);
 
     BOOL CmdShowMem(CMD_INFO& CmdInfo, LPVOID lpAddr);  //显示内存
     BOOL CmdShowAsm(CMD_INFO& CmdInfo, LPVOID lpAddr);  //显示反汇编
@@ -154,6 +158,8 @@ private:
     CList<PMYBREAK_POINT, PMYBREAK_POINT&> m_NorMalBpLst;    //一般断点列表
     CList<PMYBREAK_POINT, PMYBREAK_POINT&> m_HardBpLst;      //硬件断点列表
     CList<PMYBREAK_POINT, PMYBREAK_POINT&> m_MemBpLst;      //硬件断点列表
+
+    CList<PMOD_INFO, PMOD_INFO&> m_ModLst;     //模块链表
 
     CList<CString*, CString*&> m_CmdOrderLst;                //命令序列列表
     

@@ -19,13 +19,23 @@ public:
 
     DWORD MaxMemCurNum(DWORD dwSrc, DWORD dwDst);   //转换对齐值
     
-    BOOL ReadRemoteMem(LPVOID lpAddr, PCHAR& pBuf, DWORD dwSize);   //获得远程信息
+    BOOL ReadRemoteMem(LPVOID lpAddr, PCHAR pBuf, DWORD dwSize);   //获得远程信息
 
-    void SafeRet(); //安全返回
-    BOOL GetPeInfo();       //获取可执行文件的信息
+    void SafeRet(HANDLE hFile = INVALID_HANDLE_VALUE); //安全返回
+    BOOL GetPeInfo(LPVOID lpData);       //获取可执行文件的信息
     BOOL CopyInfoToNewFile(DWORD pInstance);    //拷贝信息到新文件
 
-    //HANDLE m_hFile; //文件句柄
+    BOOL InitModLst(CList<PMOD_INFO, PMOD_INFO&>& pModLst); //初始化模块链表
+
+    BOOL GetRemoteFSAddr(DWORD& dwOutAddr);    //获取远程fs段地址
+    BOOL GetLdrDataTable(DWORD& dwOutAddr);    //获取LDR
+    BOOL GetModInfo(CList<PMOD_INFO, PMOD_INFO&>& pModLst, LPVOID lpLdrAddr);//获取模块信息
+    BOOL GetFunLstOfMod(CList<PMOD_INFO, PMOD_INFO&>& pModLst);    //获取模块的导出函数
+    BOOL GetFunLst(CList<PMOD_EXPORT_FUN, PMOD_EXPORT_FUN&>& pModLst, CString& strFilePath);  //解析一个模块的导出表
+    BOOL WalkExportTabel(CList<PMOD_EXPORT_FUN, PMOD_EXPORT_FUN&>& pModLst);
+
+    BOOL ShowLst(CList<PMOD_EXPORT_FUN, PMOD_EXPORT_FUN&>& pModLst);
+    BOOL ConvertRvaToFa(PIMAGE_SECTION_HEADER pSection, DWORD dwSectionCount, DWORD dwRva, DWORD& dwOutFa);//转换RVA -> FA
 
     DEBUG_EVENT& m_pDbgEvt;   //目标进程调试事件
     CONTEXT& m_pContext;   //目标进程上下文
