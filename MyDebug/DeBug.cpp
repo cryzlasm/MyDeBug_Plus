@@ -123,11 +123,8 @@ CDeBug::~CDeBug()
                 PMOD_EXPORT_FUN pFun = pMod->FunLst.GetNext(pos);
 
                 delete pFun;
-                pMod->FunLst.RemoveAt(SubTmpPos);
             }
-            
             delete pMod;
-            m_CmdOrderLst.RemoveAt(posTmp);
         }
     }
 }
@@ -614,6 +611,8 @@ BOOL CDeBug::OnBreakPointEvent()       //一般断点
                 system("pause");
                 ExitProcess(0);
             }
+
+            //m_PE.FixImport(m_ModLst, 0x407000, 0xd0);
             m_NorMalBpLst.RemoveAt(pos);
             delete bp;
         }
@@ -2570,15 +2569,40 @@ BOOL CDeBug::HandleCmd(CMD_INFO& CmdInfo, LPVOID lpAddr)          //执行命令
         ShowMemLst(CmdInfo, lpAddr);
         break;
         
+    case CMD_DUMP:
+        m_PE.Dump(m_hFile, m_lpInstance);
+        break;
+
+    case CMD_FIX_IAT:
+        CmdFixImport();
+        break;
+
         //默认与无效
     case CMD_INVALID:
     default:
         break;
 
-    case CMD_DUMP:
-        m_PE.Dump(m_hFile, m_lpInstance);
     }
     
     CmdInfo.bIsBreakInputLoop = bIsBreak;
+    return TRUE;
+}
+
+BOOL CDeBug::CmdFixImport()
+{
+    DWORD dwAddr = 0;
+    DWORD dwSize = 0;
+    tcout << TEXT("请输入IAT起始位置：") ;
+    _tscanf(TEXT("%x"), &dwAddr);
+    tcout << TEXT("请输入IAT大小：") ;
+    _tscanf(TEXT("%x"), &dwSize);
+
+    if(!m_PE.FixImport(m_ModLst, dwAddr, dwSize))
+    {
+        tcout << TEXT("修复IAT失败！") << endl;
+        OutErrMsg(TEXT("CmdFixImport：修复IAT失败！"));
+    }
+
+    
     return TRUE;
 }

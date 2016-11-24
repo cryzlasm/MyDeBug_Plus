@@ -99,9 +99,6 @@ typedef struct _tagBreakPoint
     //内存断点字段
     DWORD       dwOldProtect;   //断点原有保护属性
 
-
-
-
 }MYBREAK_POINT, *PMYBREAK_POINT;
 
 //转换CMD信息时所需要的信息
@@ -169,6 +166,45 @@ typedef struct _tag_DR6
     unsigned int BT:1;
     unsigned int RESERVED1:16;
 }MYDR6, *PMYDR6;
+
+//导入表-函数信息表
+typedef struct _tagSysImportFunInfo
+{
+    DWORD m_dwNum:31;     //序号，或者RVA
+    DWORD m_dwState:1;    //是否为序号 1为序号 0为RVA
+}SYS_IMPORT_FUN_INFO, *PSYS_IMPORT_FUN_INFO;
+
+//节表属性
+typedef struct _tag_SECTION_NATURE
+{
+    DWORD m_dwUnUse:28;     //无用
+    DWORD m_dwShare:1;      //WRES
+    DWORD m_dwExecute:1;    //WRES
+    DWORD m_dwRead:1;       //WRES
+    DWORD m_dwWrite:1;      //WRES
+}SECTION_NATURE, *PSECTION_NATURE;
+
+//导入表函数信息
+typedef struct _tag_IMPORT_FUN_INFO
+{
+    DWORD dwNumOfIAT;       //在IAT中的序号
+    BOOL bIsName;           //是否为地址
+    DWORD dwFunAddrRVA;     //地址RVA
+    DWORD dwOrdinal;        //序号
+    CString strFunName;     //函数名
+}IMPORT_FUN_INFO, *PIMPORT_FUN_INFO;
+
+//导入表模块信息
+typedef struct _tag_IMPORT_MOD_INFO
+{
+    DWORD dwFixSucceed;     //成功个数
+    DWORD dwFixFailure;     //失败个数
+    DWORD dwModBase;        //模块基址
+    DWORD dwModSize;        //模块大小
+    DWORD dwFunCount;       //函数个数
+    CString strModName;     //模块名
+    CList<PIMPORT_FUN_INFO, PIMPORT_FUN_INFO> FunLst;    //函数列表
+}IMPORT_MOD_INFO, *PIMPORT_MOD_INFO;
 
 //函数信息表
 typedef struct _tag_MODULE_EXPORT_FUN_INFO

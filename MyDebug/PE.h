@@ -9,6 +9,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#define ONE_PAGE (0x1000)   //一个分页
 class CPE  
 {
 public:
@@ -29,13 +30,25 @@ public:
 
     BOOL GetRemoteFSAddr(DWORD& dwOutAddr);    //获取远程fs段地址
     BOOL GetLdrDataTable(DWORD& dwOutAddr);    //获取LDR
+
     BOOL GetModInfo(CList<PMOD_INFO, PMOD_INFO&>& pModLst, LPVOID lpLdrAddr);//获取模块信息
     BOOL GetFunLstOfMod(CList<PMOD_INFO, PMOD_INFO&>& pModLst);    //获取模块的导出函数
     BOOL GetFunLst(CList<PMOD_EXPORT_FUN, PMOD_EXPORT_FUN&>& pModLst, CString& strFilePath);  //解析一个模块的导出表
     BOOL WalkExportTabel(CList<PMOD_EXPORT_FUN, PMOD_EXPORT_FUN&>& pModLst);
 
-    BOOL ShowLst(CList<PMOD_EXPORT_FUN, PMOD_EXPORT_FUN&>& pModLst);
-    BOOL ConvertRvaToFa(PIMAGE_SECTION_HEADER pSection, DWORD dwSectionCount, DWORD dwRva, DWORD& dwOutFa);//转换RVA -> FA
+    BOOL ShowLst(CList<PMOD_INFO, PMOD_INFO&>& pModLst);
+    BOOL ConvertRvaToFa(PIMAGE_SECTION_HEADER pSection, DWORD dwSectionCount, DWORD dwRva, DWORD& dwOutFa);//转换 RVA -> FA
+    BOOL ConvertFaToRva(PIMAGE_SECTION_HEADER pSection, DWORD dwSectionCount, DWORD dwFa, DWORD& dwOutRva);//转换 FA -> RVA
+    
+    //修复导入表
+    BOOL FixImport(CList<PMOD_INFO, PMOD_INFO&>& pModLst, DWORD lpImportAddr, DWORD dwSize);
+    BOOL ResolveIAT(CList<PMOD_INFO, PMOD_INFO&>& pModLst, PDWORD pStart, PDWORD pEnd);  //解析IAT
+    BOOL ConvertIAT(CString& strFile, DWORD dwIATBase);  //转换IAT 开文件
+    BOOL CPE::HandleIAT(LPVOID lpBuf, DWORD dwIATBase);  //转换IAT 到导入表 中间表
+
+    PDWORD m_pdwImport;     //读取的远程导入表
+
+    CList<PIMPORT_MOD_INFO, PIMPORT_MOD_INFO&> m_ImportLst;     //修复的导入表链表
 
     DEBUG_EVENT& m_pDbgEvt;   //目标进程调试事件
     CONTEXT& m_pContext;   //目标进程上下文

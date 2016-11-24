@@ -118,6 +118,8 @@ public:
     BOOL SaveScript(CMD_INFO& CmdInfo, LPVOID lpAddr);          //保存脚本
     BOOL LoadScript(CMD_INFO& CmdInfo, LPVOID lpAddr);          //导入脚本
 
+    BOOL CmdFixImport();        //修复IAT
+
 
     static void __stdcall OutErrMsg(_IN_ LPCTSTR strErrMsg);    //输出错误信息
 
